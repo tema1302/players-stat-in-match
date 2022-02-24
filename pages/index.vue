@@ -1,18 +1,18 @@
 <template lang="pug">
   .container-fluid.min-h-screen
     button.relative.button.inline-block.px-5.bg-blue-600.text-white.rounded-xl(@click="fetchPlayerStats") Get data
-
-    .stats-table.text-left.text-sm.grid.grid-cols-3
-      div(v-for="(russStatName, engStatName, idx) in statsLegend" :key="idx")
-        span {{ russStatName }} / {{ engStatName }}
-    .stats-table.text-left.text-sm.grid.grid-cols-5(v-for="(value, name, idx) in statNameAndPlayersNameAndValue.touches" :key="idx")
-      .player
-        .py-2 {{ name }}
-      .cols-comparison(v-if="isLoaded", v-for="(russStatName, statName) in statNames" :key="russStatName")
-        //- .stat-legend.mx-1.py-3 {{ russStatName }}
-        .stat-value.mx-1.py-2
-          span.range {{ statNameAndPlayersNameAndValue[statName][name] }}
-            //- span.range-width(v-if="Object.keys(overallWidth).length > 0", :style="{ width: overallWidth[statName][i] + '%' }")
+    .px-20
+      .stats-table.text-left.text-sm.grid.grid-cols-12
+        .pl-1.pr-5.flex.flex-column.items-end(v-for="(russStatName, engStatName, idx) in statsLegend" :key="idx")
+          span.text-xs {{ russStatName }} / {{ engStatName }}
+      .stats-table.text-left.text-sm.grid.grid-cols-12(v-for="(value, name, idx) in statNameAndPlayersNameAndValue.touches" :key="idx")
+        .player
+          .py-1.pr-4 {{ name }}
+        .cols-comparison.flex.items-center(v-if="isLoaded", v-for="(russStatName, statName) in statNames" :key="russStatName")
+          //- .stat-legend.mx-1.py-3 {{ russStatName }}
+          .stat-value.mx-1.py-1.px-3
+            span.range {{ statNameAndPlayersNameAndValue[statName][name] }}
+              //- span.range-width(v-if="Object.keys(overallWidth).length > 0", :style="{ width: overallWidth[statName][i] + '%' }")
 </template>
 
 <script>
@@ -21,50 +21,108 @@ export default {
   data() {
     return {
       isLoaded: false,
-      matchId: 9576438,
+      matchId: 10012255,
       players: {
-        'Кепа Аррисабалага': 232422,
-        // 'Эдуар Менди': 845074,
-        'Антонио Рюдигер': 142622,
-        // 'Андреас Кристенсен': 186795,
-        'Тиаго Силва': 33541,
-        'Трево Чалоба': 826134,
+        // 'Кепа Аррисабалага': 232422,
+        'Эдуар Менди': 845074,
         'Сесар Аспиликуэта': 21555,
-        'Маланг Сарр': 826203,
-        'Бен Чилуэлл': 802695,
-        'Рис Джеймс': 885908,
+        // 'Рис Джеймс': 885908,
+        'Антонио Рюдигер': 142622,
+        'Андреас Кристенсен': 186795,
+        'Тиаго Силва': 33541,
+        // 'Трево Чалоба': 826134,
+        // 'Маланг Сарр': 826203,
+        // 'Бен Чилуэлл': 802695,
         'Маркос Алонсо': 69408,
-        'Жоржиньо': 132874,
+        // 'Жоржиньо': 132874,
         "Н'Голо Канте": 234148,
         'Матео Ковачич': 136710,
         'Рубен Лофтус-Чик': 284441,
         'Кристиан Пулишич': 817957,
-        'Сауль Ньигес': 116955,
-        'Росс Баркли': 98435,
+        // 'Сауль Ньигес': 116955,
+        // 'Росс Баркли': 98435,
         // 'Мэйсон Маунт': 836694,
-        // 'Хаким Зиеш': 249437,
+        'Хаким Зиеш': 249437,
         // 'Кенеди': 801391,
         // 'Каллум Хадсон-Одои': 867442,
-        // 'Кай Хавертц': 836705,
-        // 'Тимо Вернер': 232306,
-        // 'Ромелу Лукаку': 78893,
+        'Кай Хавертц': 836705,
+        'Тимо Вернер': 232306,
+        'Ромелу Лукаку': 78893,
       },
       statsLegend: {
-        'minutes played': 'Минут сыграно',
         players: 'Игроки',
-        touches: 'Касания (игровых действий)',
+        'minutes played': 'Минут сыграно',
+        touches: 'Касания (действия с мячом)',
+
         'total passes': 'Пасы',
-        'accurate pass': 'Успешных пасов',
-        'aerial dules won': 'Выигранных воздушных единоборств',
+        'accurate passes': 'Успешные пасы',
+        'key passes': 'Ключевые передачи',
+
+        'total offside': 'Офсайды',
+        'shots off target': 'Удары мимо ворот',
+        'shots on target': 'Удары в створ ворот',
+        // 'blocked shots': 'Заблокированные удары',
+        'total dribble': 'Попытки дриблинга',
+        'successful dribble': 'Успешный дриблинг',
+        'goals': 'Голы',
+
+        // 'assists': 'Ассисты',
+
+        // 'total long balls': 'Длинные передачи',
+        // 'accurate long balls': 'Успешные длинные передачи',
+        // 'total crosses': 'Навесы в штрафную',
+        // // 'accurate crosses': 'Успешные навесы в штрафную',
+
+        // 'interceptions': 'Перехваты',
+        // tackles: 'Отборы',
+
+        // 'aerial dules won': 'Выиграно воздушных единоборств',
+        // 'aerial dules lost': 'Проиграно воздушных единоборств',
+
+        // 'ground dules won': 'Выиграно наземных единоборств',
+        // 'ground dules lost': 'Проиграно наземных единоборств',
+        // 'clearances': 'Выносы',
+        // 'possession lost': 'Потерей мяча',
       },
       statNames: {
-
         minutesPlayed: 'Минут сыграно',
         touches: 'Касания',
         totalPass: 'Пасы',
         accuratePass: 'Успешные пасы',
-        aerialWon: 'Выиграно воздушных единоборств',
-        aerialLost: 'Проиграно воздушных единоборств',
+        keyPass: '',
+
+        totalOffside: '',
+        shotOffTarget: '',
+        onTargetScoringAttempt: '',
+        // blockedScoringAttempt: '',
+        totalContest: '',
+        wonContest: '',
+        goals: '',
+
+        // goalAssist: '',
+
+        // totalLongBalls: 'Длинные передачи',
+        // accurateLongBalls: 'Успешные длинные передачи',
+        // totalCross: 'Навесы в штрафную',
+        // // accurateCross: 'Успешные навесы в штрафную',
+
+        // interceptionWon: '',
+        // totalTackle: '',
+
+
+        // aerialWon: 'Выиграно воздушных единоборств',
+        // aerialLost: 'Проиграно воздушных единоборств',
+
+        // duelLost: 'Выиграно наземных единоборств',
+        // duelWon: 'Проиграно наземных единоборств',
+
+        // totalClearance: '',
+        // possessionLostCtrl: '',
+
+
+
+
+
 
         // totalOppositionHalfPasses: 'Пасов на чужую половину поля',
         // accuratePassesPercentage: '% успешных пасов',
@@ -90,8 +148,6 @@ export default {
         // goalConversionPercentage: 'Конвертация ударов в голы в %',
 
 
-        // totalLongBalls: 'Длинных передачи',
-        // accurateLongBallsPercentage: '% успешных длинных передач',
         // accurateChippedPasses: 'Успешных пасов с подсечкой',
 
         // accurateFinalThirdPasses: 'Успешных передач в финальную треть',
@@ -234,7 +290,7 @@ $colors: $c1, $c2, $c3, $c4, $c5, $c6, $c7;
   background-image: url('./static/123.jpg');
   background-repeat: no-repeat;
   background-size: 100%;
-  background-position: 47% 100%;
+  background-position: 47% 50%;
   font-family: 'Tenor Sans', sans-serif;
 
   &::before {
@@ -244,7 +300,7 @@ $colors: $c1, $c2, $c3, $c4, $c5, $c6, $c7;
     bottom: 0;
     right: 0;
     z-index: 0;
-    background: rgba($color: #222, $alpha: 0.5);
+    background: rgba($color: #222, $alpha: 0.8);
     // backdrop-filter: blur(1px);
     position: fixed;
   }
@@ -283,6 +339,7 @@ $colors: $c1, $c2, $c3, $c4, $c5, $c6, $c7;
   }
   .stat-value {
     position: relative;
+    flex-grow: 1;
     text-align: left;
     padding-left: 5px;
     font-size: 16px;
