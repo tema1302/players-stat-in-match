@@ -2,16 +2,16 @@
   .container-fluid.min-h-screen
     button.relative.button.inline-block.px-5.bg-blue-600.text-white.rounded-xl(@click="fetchPlayerStats") Get data
     .px-20
-      .stats-table.text-left.text-sm.grid.grid-cols-12
-        .pl-1.pr-5.flex.flex-column.items-end(v-for="(russStatName, engStatName, idx) in statsLegend" :key="idx")
-          span.text-xs {{ russStatName }} / {{ engStatName }}
-      .stats-table.text-left.text-sm.grid.grid-cols-12(v-for="(value, name, idx) in statNameAndPlayersNameAndValue.touches" :key="idx")
+      .stats-table.text-left.text-sm.grid.grid-cols-8
+        .pl-1.pr-5.flex.flex-column.items-end(v-for="(statName, requestName, idx) in statNames" :key="idx")
+          span.text-xs(v-for="(statRus, statEng, i) in statName", :key="i") {{ statRus }} / {{ statEng }}
+      .stats-table.text-left.text-sm.grid.grid-cols-8(v-for="(value, name, idx) in statNameAndPlayersNameAndValue.touches" :key="idx")
         .player
           .py-1.pr-4 {{ name }}
-        .cols-comparison.flex.items-center(v-if="isLoaded", v-for="(russStatName, statName) in statNames" :key="russStatName")
+        .cols-comparison.flex.items-center(v-if="isLoaded", v-for="(statName, requestName, i) in statNames" :key="i")
           //- .stat-legend.mx-1.py-3 {{ russStatName }}
           .stat-value.mx-1.py-1.px-3
-            span.range {{ statNameAndPlayersNameAndValue[statName][name] }}
+            span.range {{ statNameAndPlayersNameAndValue[requestName][name] }}
               //- span.range-width(v-if="Object.keys(overallWidth).length > 0", :style="{ width: overallWidth[statName][i] + '%' }")
 </template>
 
@@ -30,10 +30,10 @@ export default {
         'Антонио Рюдигер': 142622,
         'Андреас Кристенсен': 186795,
         'Тиаго Силва': 33541,
-        // 'Трево Чалоба': 826134,
-        // 'Маланг Сарр': 826203,
+        'Трево Чалоба': 826134,
+        'Маланг Сарр': 826203,
         // 'Бен Чилуэлл': 802695,
-        'Маркос Алонсо': 69408,
+        // 'Маркос Алонсо': 69408,
         // 'Жоржиньо': 132874,
         "Н'Голо Канте": 234148,
         'Матео Ковачич': 136710,
@@ -42,131 +42,47 @@ export default {
         // 'Сауль Ньигес': 116955,
         // 'Росс Баркли': 98435,
         // 'Мэйсон Маунт': 836694,
-        'Хаким Зиеш': 249437,
+        // 'Хаким Зиеш': 249437,
         // 'Кенеди': 801391,
         // 'Каллум Хадсон-Одои': 867442,
-        'Кай Хавертц': 836705,
-        'Тимо Вернер': 232306,
-        'Ромелу Лукаку': 78893,
-      },
-      statsLegend: {
-        players: 'Игроки',
-        'minutes played': 'Минут сыграно',
-        touches: 'Касания (действия с мячом)',
-
-        'total passes': 'Пасы',
-        'accurate passes': 'Успешные пасы',
-        'key passes': 'Ключевые передачи',
-
-        'total offside': 'Офсайды',
-        'shots off target': 'Удары мимо ворот',
-        'shots on target': 'Удары в створ ворот',
-        // 'blocked shots': 'Заблокированные удары',
-        'total dribble': 'Попытки дриблинга',
-        'successful dribble': 'Успешный дриблинг',
-        'goals': 'Голы',
-
-        // 'assists': 'Ассисты',
-
-        // 'total long balls': 'Длинные передачи',
-        // 'accurate long balls': 'Успешные длинные передачи',
-        // 'total crosses': 'Навесы в штрафную',
-        // // 'accurate crosses': 'Успешные навесы в штрафную',
-
-        // 'interceptions': 'Перехваты',
-        // tackles: 'Отборы',
-
-        // 'aerial dules won': 'Выиграно воздушных единоборств',
-        // 'aerial dules lost': 'Проиграно воздушных единоборств',
-
-        // 'ground dules won': 'Выиграно наземных единоборств',
-        // 'ground dules lost': 'Проиграно наземных единоборств',
-        // 'clearances': 'Выносы',
-        // 'possession lost': 'Потерей мяча',
+        // 'Кай Хавертц': 836705,
+        // 'Тимо Вернер': 232306,
+        // 'Ромелу Лукаку': 78893,
       },
       statNames: {
-        minutesPlayed: 'Минут сыграно',
-        touches: 'Касания',
-        totalPass: 'Пасы',
-        accuratePass: 'Успешные пасы',
-        keyPass: '',
+        minutesPlayed: { 'minutes played': 'Минут сыграно', },
+        touches: { touches: 'Касания (действия с мячом)', },
+        totalPass: { 'total passes': 'Пасы', },
+        accuratePass: { 'accurate passes': 'Успешные пасы', },
+        keyPass: { 'key passes': 'Ключевые передачи', },
 
-        totalOffside: '',
-        shotOffTarget: '',
-        onTargetScoringAttempt: '',
-        // blockedScoringAttempt: '',
-        totalContest: '',
-        wonContest: '',
-        goals: '',
+        shotOffTarget: { 'shots off target': 'Удары мимо ворот', },
+        onTargetScoringAttempt: { 'shots on target': 'Удары в створ ворот', },
+        // blockedScoringAttempt: { 'blocked shots': 'Заблокированные удары', },
 
-        // goalAssist: '',
+        // totalContest: { 'total dribble': 'Попытки дриблинга' },
+        // wonContest: { 'successful dribble': 'Успешный дриблинг', },
+        // goals: { 'goals': 'Голы', },
 
-        // totalLongBalls: 'Длинные передачи',
-        // accurateLongBalls: 'Успешные длинные передачи',
-        // totalCross: 'Навесы в штрафную',
-        // // accurateCross: 'Успешные навесы в штрафную',
+        // goalAssist: { 'assists': 'Ассисты', },
+        // totalLongBalls: { 'total long balls': 'Длинные передачи', },
+        // accurateLongBalls: { 'accurate long balls': 'Успешные длинные передачи', },
+        // totalCross: { 'total crosses': 'Навесы в штрафную', },
+        // accurateCross: { 'accurate crosses': 'Успешные навесы в штрафную', },
 
-        // interceptionWon: '',
-        // totalTackle: '',
+        // interceptionWon: { 'interceptions': 'Перехваты', },
+        // totalTackle: { tackles: 'Отборы', },
 
+        // aerialWon: { 'aerial dules won': 'Выиграно воздушных единоборств', },
+        // aerialLost: { 'aerial dules lost': 'Проиграно воздушных единоборств', },
 
-        // aerialWon: 'Выиграно воздушных единоборств',
-        // aerialLost: 'Проиграно воздушных единоборств',
+        // duelLost: { 'ground dules won': 'Выиграно наземных единоборств', },
+        // duelWon: { 'ground dules lost': 'Проиграно наземных единоборств', },
 
-        // duelLost: 'Выиграно наземных единоборств',
-        // duelWon: 'Проиграно наземных единоборств',
+        // totalClearance: { 'clearances': 'Выносы', },
+        // possessionLostCtrl: { 'possession lost': 'Потерей мяча', },
 
-        // totalClearance: '',
-        // possessionLostCtrl: '',
-
-
-
-
-
-
-        // totalOppositionHalfPasses: 'Пасов на чужую половину поля',
-        // accuratePassesPercentage: '% успешных пасов',
-
-        // successfulDribbles: 'Успешного дриблинга',
-        // successfulDribblesPercentage: '% успешного дриблинга',
-
-        // bigChancesCreated: 'Явных голевых моментов создано',
-        // bigChancesMissed: 'Упущено голевых моментов',
-        // assists: 'Ассистов',
-
-        // totalShots: 'Ударов',
-
-        // shotsFromOutsideTheBox: 'Ударов за пределами штрафной',
-        // shotsOnTarget: 'Ударов по воротам',
-        // shotsOffTarget: 'Ударов мимо ворот',
-
-        // goals: 'Всего голов',
-        // goalsAssistsSum: 'Гол + пас',
-        // keyPasses: 'Ключевых передач',
-
-        // penaltyGoals: 'Голов из пенальти',
-        // goalConversionPercentage: 'Конвертация ударов в голы в %',
-
-
-        // accurateChippedPasses: 'Успешных пасов с подсечкой',
-
-        // accurateFinalThirdPasses: 'Успешных передач в финальную треть',
-
-
-        // aerialWonPercentage: '% выигранных воздушных единоборств',
-
-        // groundDuelsWon: 'Выигранных наземных дуэлей',
-        // groundDuelsWonPercentage: '% выигранных наземных дуэлей',
-
-
-        // на всякий случай
-        // possessionLost: 'Потерей мяча',
-        // interceptions: 'Перехватов',
-        // tackles: 'Отборов',
-        // clearances: 'Выносов',
-
-        // blockedShots: 'Заблокировано ударов',
-        // cleanSheet: 'Сухарей',
+        // totalOffside: { 'total offside': 'Офсайды', },
       },
       // на выходе должны получать:
       // statNameAndPlayersNameAndValue: [
