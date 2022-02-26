@@ -1,18 +1,19 @@
 <template lang="pug">
-  .container-fluid.min-h-screen
+  .container-fluid.min-h-screen.px-10
     button.relative.button.inline-block.px-5.bg-blue-600.text-white.rounded-xl(@click="fetchPlayerStats") Get data
-    .px-20
-      .stats-table.text-left.text-sm.grid.grid-cols-8
-        .pl-1.pr-5.flex.flex-column.items-end(v-for="(statName, requestName, idx) in statNames" :key="idx")
+    .stats-table-wrapper.mx-auto.mt-12.p-3.border
+      .stats-table.mb-2.text-left.text-xs
+        .pl-1.pr-4.flex.flex-column.items-end.text-xs Игроки / players
+        .pl-1.pr-4.flex.flex-column.items-end(v-for="(statName, requestName, idx) in statNames" :key="idx")
           span.text-xs(v-for="(statRus, statEng, i) in statName", :key="i") {{ statRus }} / {{ statEng }}
-      .stats-table.text-left.text-sm.grid.grid-cols-8(v-for="(value, name, idx) in statNameAndPlayersNameAndValue.touches" :key="idx")
+      .stats-table.text-left.text-xs(v-for="(value, name, idx) in statNameAndPlayersNameAndValue.minutesPlayed" :key="idx")
         .player
-          .py-1.pr-4 {{ name }}
+          .py-2.pr-2 {{ name }}
         .cols-comparison.flex.items-center(v-if="isLoaded", v-for="(statName, requestName, i) in statNames" :key="i")
           //- .stat-legend.mx-1.py-3 {{ russStatName }}
-          .stat-value.mx-1.py-1.px-3
+          .stat-value.mx-1.py-2.px-3
             span.range {{ statNameAndPlayersNameAndValue[requestName][name] }}
-              //- span.range-width(v-if="Object.keys(overallWidth).length > 0", :style="{ width: overallWidth[statName][i] + '%' }")
+              span.range-width(v-if="Object.keys(overallWidth).length > 0", :style="{ width: overallWidth[requestName][idx] + '%' }")
 </template>
 
 <script>
@@ -33,40 +34,46 @@ export default {
         'Трево Чалоба': 826134,
         'Маланг Сарр': 826203,
         // 'Бен Чилуэлл': 802695,
-        // 'Маркос Алонсо': 69408,
-        // 'Жоржиньо': 132874,
+        'Маркос Алонсо': 69408,
+        'Жоржиньо': 132874,
         "Н'Голо Канте": 234148,
         'Матео Ковачич': 136710,
         'Рубен Лофтус-Чик': 284441,
         'Кристиан Пулишич': 817957,
-        // 'Сауль Ньигес': 116955,
-        // 'Росс Баркли': 98435,
-        // 'Мэйсон Маунт': 836694,
-        // 'Хаким Зиеш': 249437,
-        // 'Кенеди': 801391,
-        // 'Каллум Хадсон-Одои': 867442,
-        // 'Кай Хавертц': 836705,
-        // 'Тимо Вернер': 232306,
-        // 'Ромелу Лукаку': 78893,
+        'Сауль Ньигес': 116955,
+        'Росс Баркли': 98435,
+        'Мэйсон Маунт': 836694,
+        'Хаким Зиеш': 249437,
+        'Кенеди': 801391,
+        'Каллум Хадсон-Одои': 867442,
+        'Кай Хавертц': 836705,
+        'Тимо Вернер': 232306,
+        'Ромелу Лукаку': 78893,
       },
       statNames: {
-        minutesPlayed: { 'minutes played': 'Минут сыграно', },
-        touches: { touches: 'Касания (действия с мячом)', },
-        totalPass: { 'total passes': 'Пасы', },
-        accuratePass: { 'accurate passes': 'Успешные пасы', },
-        keyPass: { 'key passes': 'Ключевые передачи', },
+        minutesPlayed: { 'minutes': 'Минут', },
+
+        // touches: { touches: 'Касания (действия с мячом)', },
+        // totalPass: { 'total passes': 'Пасы', },
+        // accuratePass: { 'accurate passes': 'Успешные пасы', },
+        // keyPass: { 'key passes': 'Ключевые передачи', },
 
         shotOffTarget: { 'shots off target': 'Удары мимо ворот', },
         onTargetScoringAttempt: { 'shots on target': 'Удары в створ ворот', },
-        // blockedScoringAttempt: { 'blocked shots': 'Заблокированные удары', },
+        blockedScoringAttempt: { 'blocked shots': 'Заблокированные удары', },
 
         // totalContest: { 'total dribble': 'Попытки дриблинга' },
         // wonContest: { 'successful dribble': 'Успешный дриблинг', },
+
+        bigChanceMissed: { 'big chances missed': 'Упущенные голевые моменты' },
         // goals: { 'goals': 'Голы', },
 
+        // bigChanceCreated: { 'big chances created': 'Созданные голевые моменты' },
         // goalAssist: { 'assists': 'Ассисты', },
+
         // totalLongBalls: { 'total long balls': 'Длинные передачи', },
         // accurateLongBalls: { 'accurate long balls': 'Успешные длинные передачи', },
+
         // totalCross: { 'total crosses': 'Навесы в штрафную', },
         // accurateCross: { 'accurate crosses': 'Успешные навесы в штрафную', },
 
@@ -100,21 +107,22 @@ export default {
       const statNamesArr = Object.keys(this.statNames)
       for (const statName of statNamesArr) {
         const statValues = Object.values(this.statNameAndPlayersNameAndValue[statName])
-        console.log(statValues)
+        // console.log(statValues)
         const maxValue = Math.max(...statValues)
         const statValuesPersentage = statValues.map((value) => {
           return Math.round((value / maxValue) * 100)
         })
         console.log(statValuesPersentage)
-        // rtn[statName] = statValuesPersentage
+        // [100, 100, 100, 100, 100, 11, 100, 57, 43, 89, 33]
+        rtn[statName] = statValuesPersentage
       }
+      console.log(rtn)
       return rtn
     },
   },
   methods: {
     async fetchPlayerStats() {
       const statNamesArr = Object.keys(this.statNames)
-
         for (const statName of statNamesArr) {
           const objStat = {} // { 'Kepa': 30, 'Рюди': 74 }
           for (const name in this.players) {
@@ -127,6 +135,7 @@ export default {
               const wentToField = Object.keys(stats).length
               if (wentToField) {
                 objStat[name] = stats[statName]
+                if (!stats[statName]) objStat[name] = ''
                 // на выходе должны получать:
                 // statNameAndPlayersNameAndValue: {
                 // touches: {'Кепа': 30, 'Рюди': 74},
@@ -144,41 +153,6 @@ export default {
       this.isLoaded = true
       this.$forceUpdate()
     },
-    getOverallStatByMatch() {
-      const rtn = {}
-      for (const statName in this.tableNumbers) {
-        if (Object.hasOwnProperty.call(this.tableNumbers, statName)) {
-          const arrStatValue = this.tableNumbers[statName]
-          if (
-            statName === 'matchesStarted' ||
-            statName === 'appearances' ||
-            statName === 'cleanSheet' ||
-            statName === 'assists' ||
-            statName === 'bigChancesCreated' ||
-            statName === 'penaltyGoals' ||
-            statName === 'goals' ||
-            statName === 'bigChancesMissed' ||
-            statName === 'goalsAssistsSum'
-          ) {
-            rtn[statName] = arrStatValue
-          } else {
-            const arrStatValueByMatch = arrStatValue.map((statValue, idx) => {
-              if (statName.includes('Percentage')) {
-                return +statValue.toFixed(1)
-              } else {
-                return +(
-                  statValue / this.tableNumbers.appearances[idx]
-                ).toFixed(2)
-              }
-            })
-            // console.log(statName)
-            // console.log(arrStatValueByMatch)
-            rtn[statName] = arrStatValueByMatch
-          }
-        }
-      }
-      this.overallStatByMatch = rtn
-    },
   },
 }
 </script>
@@ -186,17 +160,28 @@ export default {
 @import url('https://fonts.googleapis.com/css2?family=Montserrat&family=Tenor+Sans&family=Open+Sans+Condensed:wght@300&display=swap');
 
 $c1: #4e50d8c2;
-$c2: #5b2cac9f;
+$c2: #8b34ca88;
 $c3: #6430bd9f;
 $c4: #4595e195;
 $c5: #8184e6c6;
 $c6: #475ddac2;
-$c7: #203ba78e;
+$c7: #203ba7a4;
+$c8: #4e50d8c2;
+$c9: #6430bd9f;
+$c10: #4595e195;
+$c11: #8184e6c6;
+$c12: #475ddac2;
+$c13: #203ba7a4;
+$c14: #4e50d8c2;
+$c15: #8b34ca88;
+$c16: #6430bd9f;
+$c17: #4595e195;
 
-$colors: $c1, $c2, $c3, $c4, $c5, $c6, $c7;
+
+$colors: $c1, $c2, $c3, $c4, $c5, $c6, $c7, $c8, $c9, $c10, $c11, $c12, $c13, $c14, $c15, $c16, $c17;
 @mixin bg-color {
   @for $i from 1 through length($colors) {
-    .cols-comparison:nth-child(#{$i}) .stat-value .range-width {
+    .stats-table:nth-child(#{$i}) .stat-value .range-width {
       background-color: nth($colors, $i)
     }
   }
@@ -221,31 +206,36 @@ $colors: $c1, $c2, $c3, $c4, $c5, $c6, $c7;
     position: fixed;
   }
 }
+@include bg-color;
 
+.stats-table-wrapper {
+  max-width: 700px;
+}
 .stats-table {
   width: 100%;
-  padding: 10px;
-  border-bottom: 1px solid rgba($color: #ffffff, $alpha: 0.1);
-  margin: 0;
+  padding: 2px 0;
+  // border-bottom: 1px solid rgba($color: #ffffff, $alpha: 0.1);
   color: white;
   position: relative;
   z-index: 1;
+  display: grid;
+  grid-template-columns: 130px 70px repeat(auto-fit, minmax(100px, 1fr));
   // скрываем матчи (хотя один раз нужно будет показать)
-  .cols-comparison:nth-child(2) .stat-value .range-width {
-    background-color: #4e50d8c2;
-  }
-  .cols-comparison:nth-child(3) .stat-value .range-width {
-    background-color: #6430bd9f;
-  }
-  .cols-comparison:nth-child(4) .stat-value .range-width {
-    background-color: #4595e195;
-  }
-  .cols-comparison:nth-child(5) .stat-value .range-width {
-    background-color: #8184e6c6;
-  }
-  .cols-comparison:nth-child(6) .stat-value .range-width {
-    background-color: #4e50d8c2;
-  }
+  // &:nth-child(2) .stat-value .range-width {
+  //   background-color: #4e50d8c2;
+  // }
+  // &:nth-child(3) .stat-value .range-width {
+  //   background-color: #6430bd9f;
+  // }
+  // &:nth-child(4) .stat-value .range-width {
+  //   background-color: #4595e195;
+  // }
+  // &:nth-child(5) .stat-value .range-width {
+  //   background-color: #8184e6c6;
+  // }
+  // &:nth-child(6) .stat-value .range-width {
+  //   background-color: #4e50d8c2;
+  // }
   .stat-legend {
     font-size: 13px;
     color: rgba($color: #fff, $alpha: 0.85);
@@ -258,17 +248,17 @@ $colors: $c1, $c2, $c3, $c4, $c5, $c6, $c7;
     flex-grow: 1;
     text-align: left;
     padding-left: 5px;
-    font-size: 16px;
+    font-size: 18px;
     font-family: 'Open Sans Condensed', sans-serif;
     .range {
       &-width {
         width: 100%;
-        height: 75%;
+        height: 80%;
         display: block;
         border-radius: 8px;
         position: absolute;
         z-index: -1;
-        transform: translate(-5px, -93%);
+        transform: translate(-5px, -83%);
       }
     }
   }
