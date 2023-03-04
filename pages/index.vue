@@ -1,12 +1,18 @@
 <template lang="pug">
-  .container-fluid.min-h-screen.px-10
-    button.relative.button.inline-block.px-5.bg-blue-600.text-white.rounded-xl(@click="fetchPlayerStats") Get data
-    .stats-table-wrapper.mx-auto.mt-12.p-3.border
-      .stats-table.mb-2.text-left.text-xs
-        .pl-1.pr-4.flex.flex-column.items-end.text-xs Игроки / players
-        .pl-1.pr-4.flex.flex-column.items-end(v-for="(statName, requestName, idx) in statNames" :key="idx")
-          span.text-xs(v-for="(statRus, statEng, i) in statName", :key="i") {{ statRus }} / {{ statEng }}
-      .stats-table.text-left.text-xs(v-for="(value, name, idx) in statNameAndPlayersNameAndValue.minutesPlayed" :key="idx")
+  .container-fluid.min-h-screen
+    .container.mx-auto.pt-10
+      .flex.justify-between.items-start
+        FindId(@item-selected="getSearchResult")
+        button.relative.button.inline-block.px-5.text-white.rounded-xl(class="bg-gray-700 hover:bg-gray-600", @click="fetchSofaPlayersName") Получить стату
+
+    .container.mx-auto.pt-10
+      h1.text-center.text-white(v-if="teamName.lenght > 0") {{ teamName }}
+    .stats-table-wrapper.mx-auto.mt-12.p-3(ref="statsTable")
+      .stats-table.mb-2.text-left.text-xs(:style="{ width: computedScrollWidth + 'px'}")
+        .player.pl-1.pr-4.flex.flex-column.items-end.text-xs Игроки / players
+        .cols-comparison.pl-1.pr-4.flex.flex-column.items-end(v-for="(statName, requestName, idx) in statNames" :key="idx")
+          span.text-xs.text-white(v-for="(statRus, statEng, i) in statName", :key="i") {{ statRus }} / {{ statEng }}
+      .stats-table.text-left.text-xs(v-for="(value, name, idx) in statNameAndPlayersNameAndValue.minutesPlayed" :key="idx", :style="{ width: computedScrollWidth + 'px'}")
         .player
           .py-2.pr-2 {{ name }}
         .cols-comparison.flex.items-center(v-if="isLoaded", v-for="(statName, requestName, i) in statNames" :key="i")
@@ -22,71 +28,66 @@ export default {
   data() {
     return {
       isLoaded: false,
-      matchId: 10012255,
-      players: {
-        // 'Кепа Аррисабалага': 232422,
-        'Эдуар Менди': 845074,
-        'Сесар Аспиликуэта': 21555,
-        // 'Рис Джеймс': 885908,
-        'Антонио Рюдигер': 142622,
-        'Андреас Кристенсен': 186795,
-        'Тиаго Силва': 33541,
-        'Трево Чалоба': 826134,
-        'Маланг Сарр': 826203,
-        // 'Бен Чилуэлл': 802695,
-        'Маркос Алонсо': 69408,
-        'Жоржиньо': 132874,
-        "Н'Голо Канте": 234148,
-        'Матео Ковачич': 136710,
-        'Рубен Лофтус-Чик': 284441,
-        'Кристиан Пулишич': 817957,
-        'Сауль Ньигес': 116955,
-        'Росс Баркли': 98435,
-        'Мэйсон Маунт': 836694,
-        'Хаким Зиеш': 249437,
-        'Кенеди': 801391,
-        'Каллум Хадсон-Одои': 867442,
-        'Кай Хавертц': 836705,
-        'Тимо Вернер': 232306,
-        'Ромелу Лукаку': 78893,
-      },
+
+      teamName: '',
+      teamId: 0,
+
+      team: '38', // chelsea
+      // team: '33', // tth
+      // team: '35', // man utd
+      // team: '39', // ньюкасл
+      // team: '44', // ливерпуль
+      // team: '17', // man city
+      // team: '35', // man utd
+      // team: '2829', // реал м
+      // team: '1643', // лилль
+
+      matchId: 10385495,
+      seasonTeam: 41886,
+      uniqueTournament: 17,
+
+      playersDynamic: {},
+      computedScrollWidth: 0,
       statNames: {
         minutesPlayed: { 'minutes': 'Минут', },
 
-        // touches: { touches: 'Касания (действия с мячом)', },
-        // totalPass: { 'total passes': 'Пасы', },
-        // accuratePass: { 'accurate passes': 'Успешные пасы', },
-        // keyPass: { 'key passes': 'Ключевые передачи', },
+        touches: { touches: 'Касания (действия с мячом)', },
+        totalPass: { 'total passes': 'Пасы', },
+        accuratePass: { 'accurate passes': 'Успешные пасы', },
+
+        keyPass: { 'key passes': 'Ключевые передачи', },
+
+        bigChanceCreated: { 'big chances created': 'Созданные голевые моменты' },
+        goalAssist: { 'assists': 'Ассисты', },
 
         shotOffTarget: { 'shots off target': 'Удары мимо ворот', },
         onTargetScoringAttempt: { 'shots on target': 'Удары в створ ворот', },
-        blockedScoringAttempt: { 'blocked shots': 'Заблокированные удары', },
+        blockedScoringAttempt: { 'blocked shots': 'Заблокир. удары', },
 
-        // totalContest: { 'total dribble': 'Попытки дриблинга' },
-        // wonContest: { 'successful dribble': 'Успешный дриблинг', },
 
         bigChanceMissed: { 'big chances missed': 'Упущенные голевые моменты' },
-        // goals: { 'goals': 'Голы', },
+        goals: { 'goals': 'Голы', },
 
-        // bigChanceCreated: { 'big chances created': 'Созданные голевые моменты' },
-        // goalAssist: { 'assists': 'Ассисты', },
+        totalContest: { 'total dribble': 'Попытки дриблинга' },
+        wonContest: { 'successful dribble': 'Успешный дриблинг', },
 
-        // totalLongBalls: { 'total long balls': 'Длинные передачи', },
-        // accurateLongBalls: { 'accurate long balls': 'Успешные длинные передачи', },
 
-        // totalCross: { 'total crosses': 'Навесы в штрафную', },
-        // accurateCross: { 'accurate crosses': 'Успешные навесы в штрафную', },
+        totalLongBalls: { 'total long balls': 'Длинные передачи', },
+        accurateLongBalls: { 'accurate long balls': 'Успешные длинные передачи', },
 
-        // interceptionWon: { 'interceptions': 'Перехваты', },
-        // totalTackle: { tackles: 'Отборы', },
+        totalCross: { 'total crosses': 'Навесы в штрафную', },
+        accurateCross: { 'accurate crosses': 'Успешные навесы в штрафную', },
 
-        // aerialWon: { 'aerial dules won': 'Выиграно воздушных единоборств', },
-        // aerialLost: { 'aerial dules lost': 'Проиграно воздушных единоборств', },
+        aerialWon: { 'aerial dules won': 'Выиграно воздушных единоборств', },
+        aerialLost: { 'aerial dules lost': 'Проиграно воздушных единоборств', },
 
-        // duelLost: { 'ground dules won': 'Выиграно наземных единоборств', },
-        // duelWon: { 'ground dules lost': 'Проиграно наземных единоборств', },
+        duelLost: { 'ground dules won': 'Выиграно наземных единоборств', },
+        duelWon: { 'ground dules lost': 'Проиграно наземных единоборств', },
 
-        // totalClearance: { 'clearances': 'Выносы', },
+        interceptionWon: { 'interceptions': 'Перехваты', },
+        totalTackle: { tackles: 'Отборы', },
+
+        totalClearance: { 'clearances': 'Выносы', },
         // possessionLostCtrl: { 'possession lost': 'Потерей мяча', },
 
         // totalOffside: { 'total offside': 'Офсайды', },
@@ -97,8 +98,26 @@ export default {
       // ...
       // ]
       statNameAndPlayersNameAndValue: {},
+      playersInfoStats: {},
       tableNumbers: {},
       overallStatByMatch: {},
+
+      teamInfoFotmob: {},
+      statNamesFotmob: {
+        'Accurate passes': 'Успешные пасы',
+        'Expected goals (xG)': 'Ожидаемые голы',
+        'Expected assists (xA)': 'Ожидаемые ассисты',
+        'Shot accuracy': 'Успешные удары',
+        'Successful dribbles': 'Успешный дриблинг',
+        'Accurate long balls': 'Успешные длинные передачи',
+        Recoveries: 'Возвраты мяча',
+        'Tackles won': 'Успешные отборы',
+        'Aerial duels won': 'Выиграно воздушных единоборств',
+        'Ground duels won': 'Выиграно наземных единоборств',
+      },
+
+      start11Stats: {},
+      benchOnFieldStats: {},
     }
   },
   computed: {
@@ -107,75 +126,246 @@ export default {
       const statNamesArr = Object.keys(this.statNames)
       for (const statName of statNamesArr) {
         const statValues = Object.values(this.statNameAndPlayersNameAndValue[statName])
-        // console.log(statValues)
+        console.log(statValues)
+        const minValue = 20
         const maxValue = Math.max(...statValues)
         const statValuesPersentage = statValues.map((value) => {
-          return Math.round((value / maxValue) * 100)
+          if (value === 0 || value === '') {
+            return 0
+          }
+          const percentage = Math.round((value / maxValue) * 100)
+          return Math.max(percentage, minValue)
         })
-        console.log(statValuesPersentage)
+        // console.log(statValuesPersentage)
         // [100, 100, 100, 100, 100, 11, 100, 57, 43, 89, 33]
         rtn[statName] = statValuesPersentage
       }
-      console.log(rtn)
       return rtn
     },
   },
+  mounted() {
+    console.log(this.$refs.statsTable.scrollWidth)
+    this.computedScrollWidth = this.$refs.statsTable.scrollWidth
+  },
+
+
   methods: {
-    async fetchPlayerStats() {
+    async getPrevMatch() {
+      try {
+        const response = await this.$axios.get(
+          `/api/v1/team/${this.teamId}/events/last/0`
+        )
+        console.log(response.data.events)
+      } catch (e) {
+        console.error(e.response)
+      }
+    },
+    async getNextMatch() {
+      try {
+        const response = await this.$axios.get(
+          `/api/v1/team/${this.teamId}/events/next/0`
+        )
+        console.log(response.data.events)
+      } catch (e) {
+        console.error(e.response)
+      }
+    },
+    getSearchResult(data) {
+      this.teamName = data.name
+      this.teamId = data.id
+    },
+    async fetchSofaPlayersName() {
+      try {
+        const response = await this.$axios.get(
+          `/api/v1/team/${this.teamId}/unique-tournament/${this.uniqueTournament}/season/${this.seasonTeam}/top-players/overall`
+        )
+        const playersArr = response.data.topPlayers.rating
+        playersArr.forEach(player => {
+          const id = player.player.id
+          const name = player.player.name
+          this.playersDynamic[name] = id
+        })
+
+        await this.takeSofaDataPlayers()
+        this.fetchPlayerStats()
+        await this.takeFotmobDataPlayers()
+        console.log(this.start11Stats)
+      } catch (e) {
+        console.error(e.response)
+      }
+    },
+    async takeSofaDataPlayers() {
+      const wrapperPlayerInfo = {}
+      for (const name in this.playersDynamic) {
+        if (Object.hasOwnProperty.call(this.playersDynamic, name)) {
+          const id = this.playersDynamic[name];
+          try {
+            const response = await this.$axios.get(
+              `https://api.sofascore.com/api/v1/event/${this.matchId}/player/${id}/statistics`
+            )
+            const stats = response.data.statistics
+            const position = response.data.player.position
+            const wentToField = Object.keys(stats).length
+            if (wentToField) {
+              wrapperPlayerInfo[name] = stats
+              wrapperPlayerInfo[name].position = position
+            }
+          } catch (e) {
+            console.error(e.response)
+          }
+        }
+      }
+      this.playersInfoStats = wrapperPlayerInfo
+    },
+    fetchPlayerStats() {
       const statNamesArr = Object.keys(this.statNames)
         for (const statName of statNamesArr) {
           const objStat = {} // { 'Kepa': 30, 'Рюди': 74 }
-          for (const name in this.players) {
-            const id = this.players[name]
-            try {
-              const response = await this.$axios.get(
-                `https://api.sofascore.com/api/v1/event/${this.matchId}/player/${id}/statistics`
-              )
-              const stats = response.data.statistics
+          for (const name in this.playersInfoStats) {
+            if (Object.hasOwnProperty.call(this.playersInfoStats, name)) {
+              const stats = this.playersInfoStats[name];
               const wentToField = Object.keys(stats).length
               if (wentToField) {
                 objStat[name] = stats[statName]
                 if (!stats[statName]) objStat[name] = ''
-                // на выходе должны получать:
-                // statNameAndPlayersNameAndValue: {
-                // touches: {'Кепа': 30, 'Рюди': 74},
-                // ...
-                // }
               }
-            } catch (e) {
-              console.error(e.response)
             }
           }
+
           this.statNameAndPlayersNameAndValue[statName] = objStat
-          console.log(this.statNameAndPlayersNameAndValue)
+          // console.log(this.statNameAndPlayersNameAndValue)
         }
-      console.log(this.isLoaded)
+      // console.log(this.isLoaded)
       this.isLoaded = true
       this.$forceUpdate()
     },
+    // Fotmob
+    async takeFotmobDataPlayers() {
+      try {
+        const response = await this.$axios.get(
+          `/matchDetails?matchId=3780925`
+        )
+        const teamInfo = response.data.content.lineup.lineup.find(team => team.teamName === 'Chelsea')
+        this.teamInfoFotmob = teamInfo
+        this.setStart11Stats()
+
+      } catch (e) {
+        console.error(e.response)
+      }
+    },
+    // просто собираем данные по игрокам из fotmob
+    setStart11Stats() {
+      const start11 = this.teamInfoFotmob.players
+      start11.forEach(amplua => {
+        console.log(amplua)
+        amplua.forEach(player => {
+          const needStats = {}
+          const playerName = (player.name.firstName + ' ' + player.name.lastName).trim()
+          console.log(playerName)
+
+          for (const statName in this.statNamesFotmob) {
+            console.log(player)
+            const stataIsInStats = player.stats.find(statByFunction => statName in statByFunction.stats)
+            if (!stataIsInStats) continue
+            // console.log(stataIsInStats)
+            needStats[statName] = stataIsInStats.stats[statName]
+            // console.log('needStats')
+            // console.log(needStats)
+          }
+
+          this.start11Stats[playerName] = needStats // array with 4 stats params
+          // console.log('this.start11Stats')
+          // console.log(this.start11Stats)
+        })
+      })
+      this.setBenchOnFieldStats()
+    },
+    setBenchOnFieldStats() {
+      const bench = this.teamInfoFotmob.bench
+      bench.forEach(player => {
+        if (player.rating.num) {
+          const needStats = {}
+          const playerName = (player.name.firstName + ' ' + player.name.lastName).trim()
+          // console.log(playerName)
+
+          for (const statName in this.statNamesFotmob) {
+            console.log(player)
+            const stataIsInStats = player.stats.find(statByFunction => statName in statByFunction.stats)
+            if (!stataIsInStats) continue
+            // console.log(stataIsInStats)
+            needStats[statName] = stataIsInStats.stats[statName]
+            // console.log('needStats')
+            // console.log(needStats)
+          }
+          this.benchOnFieldStats[playerName] = needStats // array with 4 stats params
+          // console.log('benchOnFieldStats')
+          // console.log(this.benchOnFieldStats)
+        }
+      })
+      this.combineFotmobSofaStats()
+    },
+    combineFotmobSofaStats() {
+      this.statNameAndPlayersNameAndValue = Object.assign(
+        this.statNameAndPlayersNameAndValue,
+        this.start11Stats,
+        this.benchOnFieldStats
+      )
+      console.log('this.statNameAndPlayersNameAndValue')
+      console.log(this.statNameAndPlayersNameAndValue)
+      this.combineStatNames()
+    },
+    combineStatNames() {
+      console.log('this.statNames')
+
+      this.statNames = Object.assign(
+        this.statNames,
+        this.statNamesFotmob
+      )
+      console.log(this.statNames)
+    },
+    // разбиваем данные
+    // decomposedFotmobStat() {
+    //   const statNameAndNamesWithStats = {}
+    //   for (const statName in this.statNamesFotmob) {
+    //       // { 'Kepa': 30, 'Рюди': 74 }
+    //       for (const name in this.playersDynamic) {
+    //         if (Object.hasOwnProperty.call(this.playersDynamic, name)) {
+    //           const stats = this.playersDynamic[name];
+    //           const wentToField = Object.keys(stats).length
+    //           if (wentToField) {
+    //             statNameAndNamesWithStats[name] = stats[statName]
+    //             if (!stats[statName]) statNameAndNamesWithStats[name] = ''
+    //           }
+    //         }
+    //       }
+
+    //       this.statNameAndPlayersNameAndValue[statName] = statNameAndNamesWithStats
+    //       // console.log(this.statNameAndPlayersNameAndValue)
+    //     }
+    // },
   },
 }
 </script>
 <style lang="scss">
 @import url('https://fonts.googleapis.com/css2?family=Montserrat&family=Tenor+Sans&family=Open+Sans+Condensed:wght@300&display=swap');
 
-$c1: #4e50d8c2;
-$c2: #8b34ca88;
-$c3: #6430bd9f;
-$c4: #4595e195;
-$c5: #8184e6c6;
-$c6: #475ddac2;
-$c7: #203ba7a4;
-$c8: #4e50d8c2;
-$c9: #6430bd9f;
-$c10: #4595e195;
-$c11: #8184e6c6;
-$c12: #475ddac2;
-$c13: #203ba7a4;
-$c14: #4e50d8c2;
-$c15: #8b34ca88;
-$c16: #6430bd9f;
-$c17: #4595e195;
+$c1: #d8bfd8;
+$c2: #ccccff;
+$c3: #ffd1dc;
+$c4: #e6e6fa;
+$c5: #fadadd;
+$c6: #bac8cc;
+$c7: #ffefd5;
+$c8: #ffd9cb;
+$c9: #f3a683;
+$c10: #ffece5;
+$c11: #ffe5b4;
+$c12: #ffc6b2;
+$c13: #ffdead;
+$c14: #f5deb3;
+$c15: #c9a0dc;
+$c16: #ffc0cb;
+$c17: #c8a2c8;
 
 
 $colors: $c1, $c2, $c3, $c4, $c5, $c6, $c7, $c8, $c9, $c10, $c11, $c12, $c13, $c14, $c15, $c16, $c17;
@@ -188,10 +378,10 @@ $colors: $c1, $c2, $c3, $c4, $c5, $c6, $c7, $c8, $c9, $c10, $c11, $c12, $c13, $c
 }
 
 .container-fluid {
-  background-image: url('./static/123.jpg');
-  background-repeat: no-repeat;
-  background-size: 100%;
-  background-position: 47% 50%;
+  background-image: url('https://phonoteka.org/uploads/posts/2022-02/1645386095_54-phonoteka-org-p-stilnii-fon-dlya-vizitki-54.jpg');
+  // background-repeat: no-repeat;
+  // background-size: 100%;
+  // background-position: 47% 50%;
   font-family: 'Tenor Sans', sans-serif;
 
   &::before {
@@ -201,7 +391,7 @@ $colors: $c1, $c2, $c3, $c4, $c5, $c6, $c7, $c8, $c9, $c10, $c11, $c12, $c13, $c
     bottom: 0;
     right: 0;
     z-index: 0;
-    background: rgba($color: #222, $alpha: 0.8);
+    // background: rgba($color: #222, $alpha: 0.8);
     // backdrop-filter: blur(1px);
     position: fixed;
   }
@@ -209,17 +399,40 @@ $colors: $c1, $c2, $c3, $c4, $c5, $c6, $c7, $c8, $c9, $c10, $c11, $c12, $c13, $c
 @include bg-color;
 
 .stats-table-wrapper {
-  max-width: 700px;
+  overflow-x: scroll;
+  scroll-behavior: smooth;
+  position: relative;
+  z-index: 2;
 }
 .stats-table {
   width: 100%;
   padding: 2px 0;
   // border-bottom: 1px solid rgba($color: #ffffff, $alpha: 0.1);
-  color: white;
+  color: #ffffff;
+  // color: #1f1d1d;
   position: relative;
   z-index: 1;
-  display: grid;
-  grid-template-columns: 130px 70px repeat(auto-fit, minmax(100px, 1fr));
+  // display: grid;
+  // grid-auto-flow:column;
+  // grid-template-columns: 130px 100px repeat(auto-fit, minmax(100px, 1fr));
+  display: flex;
+  flex-wrap: nowrap;
+
+  .player {
+    flex: 0 0 140px;
+    background-color: rgba($color: #000, $alpha: 0.4);
+    position: sticky;
+    left: -14px;
+    padding-left: 8px;
+    z-index: 50;
+    backdrop-filter: blur(5px);
+    border-radius: 8px;
+  }
+  .cols-comparison {
+    flex: 0 0 110px;
+  }
+
+
   // скрываем матчи (хотя один раз нужно будет показать)
   // &:nth-child(2) .stat-value .range-width {
   //   background-color: #4e50d8c2;
@@ -239,20 +452,31 @@ $colors: $c1, $c2, $c3, $c4, $c5, $c6, $c7, $c8, $c9, $c10, $c11, $c12, $c13, $c
   .stat-legend {
     font-size: 13px;
     color: rgba($color: #fff, $alpha: 0.85);
+    // color: rgba($color: #1f1d1d, $alpha: 0.85);
     display: flex;
     align-items: flex-end;
     line-height: 1;
   }
+
+  .cols-comparison {
+    font-weight: 500;
+    color: #1f1d1d;
+
+  }
   .stat-value {
+    font-weight: 900;
     position: relative;
     flex-grow: 1;
     text-align: left;
     padding-left: 5px;
     font-size: 18px;
     font-family: 'Open Sans Condensed', sans-serif;
+
     .range {
+      // background: linear-gradient(90deg, rgba(255,255,255,1) 0%, rgba(246,246,246,1) 78%, rgba(28,2,199,0.04245448179271705) 100%);
+      // border-radius: 8px;
       &-width {
-        width: 100%;
+        width: 0%;
         height: 80%;
         display: block;
         border-radius: 8px;

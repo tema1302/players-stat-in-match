@@ -60,6 +60,11 @@ export default {
       target: 'https://ru.whoscored.com/',
       changeOrigin: true,
     },
+    '/matchDetails': {
+      target: 'https://www.fotmob.com/',
+      changeOrigin: true,
+      // pathRewrite: { '^/apiReg': '/registration' },
+    },
   },
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
