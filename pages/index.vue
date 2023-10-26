@@ -250,7 +250,7 @@ export default {
     async fetchSofaPlayersName() {
       try {
         const response = await this.$axios.get(
-          `/api/v1/team/${this.teamId}/unique-tournament/${this.tournamentId}/season/${this.seasonTeam}/top-players/overall`
+          `/api/v1/team/${this.teamId}/unique-tournament/${this.tournamentId}/season/${this.seasonData.id}/top-players/overall`
         )
         const playersArr = response.data.topPlayers.rating
         playersArr.forEach(player => {

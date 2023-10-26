@@ -1,136 +1,109 @@
 <template lang="pug">
 .relative
-  input.bg-gray-700.text-white.rounded-lg.py-2.px-3(class="w-full focus:bg-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-transparent", type="text", placeholder="Выберите матч", v-model="inputedName" @click="chooseMatch()")
+  input.bg-gray-700.text-white.rounded-lg.py-2.px-3(:class="{'w-full focus:bg-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-transparent': true}", type="text", placeholder="Выберите матч", v-model="inputedName" @click="fetchMatches()")
   .search-results.custom-scrollbar.my-5.bg-gray-700.rounded-lg.text-white(ref="searchResults", v-if="gotResult", class="")
     ul#results-list
       li(v-for="(match, idx) in searchedTeamMatches" :key="match.matchId" class="bg-gray-700 hover:bg-gray-600 transition" @click="selectItem(idx)")
         | {{ match.opponent }}<br>
         | <span class="text-sm">{{ match.score }}</span>
-</template>
+  </template>
 
-<script>
-export default {
-  name: 'ChoseMatch',
-  props: {
-    teamId: {
-      type: Number,
-      required: true,
-      default: 0,
+  <script>
+  export default {
+    name: 'ChoseMatch',
+    props: {
+      teamId: {
+        type: Number,
+        required: true,
+      },
+      teamName: {
+        type: String,
+        required: true,
+      },
+      tournamentId: {
+        type: Number,
+        required: true,
+      },
     },
-    teamName: {
-      type: String,
-      required: true,
-      default: '',
+    data() {
+      return {
+        inputedName: '',
+        searchedTeamMatches: [],
+        gotResult: false,
+        selectedId: 0,
+        selectedName: '',
+        choosenMatchInfo: {},
+      }
     },
-    tournamentId: {
-      type: Number,
-      required: true,
-      default: 0,
+    watch: {
+      async inputedName() {
+        if (this.searchedTeamMatches.length > 0 && this.teamId === this.$store.state.teamId) {
+          return;
+        }
+        await this.fetchMatches();
+      },
+      teamId() {
+        this.fetchMatches();
+      },
     },
-  },
-  data() {
-    return {
-      inputedName: '',
-      searchedTeamMatches: [],
-      gotResult: false,
-      selectedId: 0,
-      selectedName: '',
-      choosenMatchInfo: {},
-    }
-  },
-  watch: {
-    inputedName() {
-      // filter data in searchedTeamMatches, поэтому данные какие-то должны быть. Чистить массив нельзя. Надо проверять, если ли в этом массиве данные и произошли ли изменения в teamId (изменил ли пользователь команду).
-      // если изменил, то тогда еще раз стучимся запросом в сервер
-    },
-  },
-  // mounted() {
-  //   this.selectedId = localStorage.getItem('selectedId') ?? 0
-  //   this.selectedName = localStorage.getItem('selectedName') ?? ''
-  //   if (this.selectedId ?? this.selectedName) this.emitSelectedItem()
-  // },
-  methods: {
-    async chooseMatch() {
-      console.log(this.teamId)
-      console.log(this.$store.state.teamId)
-      if (this.searchedTeamMatches.length === 0 || this.teamId !== this.$store.state.teamId) {
-
+    methods: {
+      async fetchMatches() {
         try {
-          this.searchedTeamMatches = []
+          this.searchedTeamMatches = [];
           for (let i = 0; i < 2; i++) {
             const response = await this.$axios.get(
               `/api/v1/team/${this.teamId}/events/last/${i}`
-            )
-            const events = response.data.events.filter(event => event.tournament.uniqueTournament.id === 17 && event.status.type === 'finished')
-
-            const searchedTeamMatches = []
+            );
+            const events = response.data.events.filter(event => event.tournament.uniqueTournament.id === 17 && event.status.type === 'finished');
+            const searchedTeamMatches = [];
 
             events.forEach(event => {
-              const homeScore = Object.keys(event.homeScore).length !== 0 ? event.homeScore.normaltime : 0
-              const awayScore = Object.keys(event.awayScore).length !== 0 ? event.awayScore.normaltime : 0
+              const homeScore = Object.keys(event.homeScore).length !== 0 ? event.homeScore.normaltime : 0;
+              const awayScore = Object.keys(event.awayScore).length !== 0 ? event.awayScore.normaltime : 0;
 
               if (event.homeTeam.name === this.teamName) {
                 searchedTeamMatches.push({
                   opponent: event.awayTeam.name,
                   matchId: event.id,
                   score: `${homeScore} - ${awayScore}`
-                })
+                });
               } else if (event.awayTeam.name === this.teamName) {
                 searchedTeamMatches.push({
                   opponent: event.homeTeam.name,
                   matchId: event.id,
                   score: `${awayScore} - ${homeScore}`
-                })
+                });
               }
-            })
+            });
 
-            searchedTeamMatches.reverse()
-
-            this.searchedTeamMatches.push(...searchedTeamMatches)
-            console.log(this.searchedTeamMatches)
-            // [ {opponent: 'Brentford', matchId: 9576238, score: '1 - 4'}, {opponent: 'Southampton', matchId: 9576284, score: '6 - 0'} ]
+            searchedTeamMatches.reverse();
+            this.searchedTeamMatches.push(...searchedTeamMatches);
           }
 
-          // this.results = [...results] // [{"name":"Chelsea","id":38},{"name":"Manchester City","id":17}...]
-        } catch (e) {
-          console.log(e.response)
+          this.gotResult = true;
+          setTimeout(() => {
+            this.searchModal('open');
+          }, 100);
+        } catch (error) {
+          console.error(error.response);
+          // Можно добавить обработку ошибки и оповещение пользователя
         }
-      }
+      },
+      searchModal(action) {
+        const list = this.$refs.searchResults;
+        action === 'open' ? list.classList.add('visible') : list.classList.remove('visible');
+      },
+      selectItem(index) {
+        this.inputedName = this.searchedTeamMatches[index].opponent;
+        this.$emit('item-selected', {
+          searchedTeamMatches: this.searchedTeamMatches[index]
+        });
+        this.searchModal('');
+      },
+    },
+  }
+  </script>
 
-      this.gotResult = true
-      setTimeout(() => {
-        console.log(this.$refs.searchResults)
-        this.searchModal('open')
-      }, 100)
-    },
-    searchModal(action) {
-      const list = this.$refs.searchResults
-      action === 'open' ? list.classList.add('visible') : list.classList.remove('visible')
-      console.log(action)
-    },
-    selectItem(index) {
-      console.log(this.searchedTeamMatches[index])
-      this.inputedName = this.searchedTeamMatches[index].opponent
-      this.$emit('item-selected', {
-        searchedTeamMatches: this.searchedTeamMatches[index]
-      })
-      // this.selectedId = this.searchedTeamMatches[index].id
-      // this.selectedName = this.searchedTeamMatches[index].name
-      // localStorage.setItem('selectedId', this.selectedId)
-      // localStorage.setItem('selectedName', this.selectedName)
-      this.searchModal('')
-
-      // this.emitSelectedItem()
-    },
-    emitSelectedItem() {
-      this.$emit('item-selected', {
-        searchedTeamMatches: this.selectedId,
-        name: this.selectedName
-      })
-    }
-  },
-}
-</script>
 
 <style lang="scss">
 .search-results {
