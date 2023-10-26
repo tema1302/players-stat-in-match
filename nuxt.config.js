@@ -7,7 +7,7 @@ export default {
 
   // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
-    title: 'players-stat-in-match',
+    title: 'Поматчевая статистика',
     htmlAttrs: {
       lang: 'en',
     },
@@ -46,8 +46,8 @@ export default {
 
   // Axios module configuration: https://go.nuxtjs.dev/config-axios
   axios: {
-    // Workaround to avoid enforcing hard-coded localhost:3000: https://github.com/nuxt-community/axios-module/issues/308
-    baseURL: '/',
+    baseURL: process.env.NODE_ENV === 'production' ? '/api.php?url=' : '/',
+    browserBaseURL: process.env.NODE_ENV === 'production' ? '/api.php?url=' : '/',
     proxy: true,
     proxyHeaders: false,
   },
@@ -56,17 +56,23 @@ export default {
       target: 'https://api.sofascore.com/',
       changeOrigin: true,
     },
-    '/StatisticsFeed': {
-      target: 'https://ru.whoscored.com/',
-      changeOrigin: true,
-    },
-    '/matchDetails': {
-      target: 'https://www.fotmob.com/',
-      changeOrigin: true,
-      // pathRewrite: { '^/apiReg': '/registration' },
-    },
+    // '/StatisticsFeed': {
+    //   target: 'https://ru.whoscored.com/',
+    //   changeOrigin: true,
+    // },
+    // '/matchDetails': {
+    //   target: 'https://www.fotmob.com/',
+    //   changeOrigin: true,
+    //   // pathRewrite: { '^/apiReg': '/registration' },
+    // },
   },
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
-  build: {},
+  build: {
+    extractCSS: process.env.NODE_ENV === 'production',
+  },
+  router: {
+    base: '/',
+  },
+
 }

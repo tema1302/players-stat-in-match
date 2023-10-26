@@ -1,26 +1,42 @@
 <template lang="pug">
-  .container-fluid.min-h-screen
-    .container.mx-auto.pt-10
-      .flex.justify-between.items-start
-        FindId(@item-selected="getSearchResult")
-        button.relative.button.inline-block.px-5.text-white.rounded-xl(class="bg-gray-700 hover:bg-gray-600", @click="fetchSofaPlayersName") Получить стату
+.container-fluid.min-h-screen
+  .container.mx-auto.pt-5.px-2.relative
+    button.hamburger(@click="toggleMenu")
+      div.line1(:class="{'change': menuOpen}")
+      div.line2(:class="{'change': menuOpen}")
+      div.line3(:class="{'change': menuOpen}")
+    transition(name="slide-fade")
+      .mt-3(v-if="menuOpen", class="absolute z-10")
+        .flex.flex-col(class="lg:flex-row justify-between items-start")
+          FindId.mr-2(@item-selected="getSearchResult")
+          .flex.justify-end(class="flex-col lg:flex-row")
+            ChoseSeason.mr-2(v-if="teamId" class="mt-2 lg:mt-0" :teamId="teamId" @season-selected="getChosenSeason")
+            ChoseMatch.mr-2(v-if="teamId && seasonData.id" class="mt-2 lg:mt-0" :teamId="teamId" :teamName="teamName" :tournamentId="tournamentId"  @item-selected="getChosenMatch")
+            button.relative.button.inline-block.px-5.py-3.text-white.rounded-xl(v-if="matchInfo.matchId" class="bg-gray-700 hover:bg-gray-600 mt-2 lg:mt-0" :class="" @click="fetchSofaPlayersName") Получить стату
 
-    .container.mx-auto.pt-10
-      h1.text-center.text-white(v-if="teamName.lenght > 0") {{ teamName }}
-    .stats-table-wrapper.mx-auto.mt-12.p-3(ref="statsTable")
-      .stats-table.mb-2.text-left.text-xs(:style="{ width: computedScrollWidth + 'px'}")
-        .player.pl-1.pr-4.flex.flex-column.items-end.text-xs Игроки / players
-        .cols-comparison.pl-1.pr-4.flex.flex-column.items-end(v-for="(statName, requestName, idx) in statNames" :key="idx")
-          span.text-xs.text-white(v-for="(statRus, statEng, i) in statName", :key="i") {{ statRus }} / {{ statEng }}
-      .stats-table.text-left.text-xs(v-for="(value, name, idx) in statNameAndPlayersNameAndValue.minutesPlayed" :key="idx", :style="{ width: computedScrollWidth + 'px'}")
-        .player
-          .py-2.pr-2 {{ name }}
-        .cols-comparison.flex.items-center(v-if="isLoaded", v-for="(statName, requestName, i) in statNames" :key="i")
-          //- .stat-legend.mx-1.py-3 {{ russStatName }}
-          .stat-value.mx-1.py-2.px-3
-            span.range {{ statNameAndPlayersNameAndValue[requestName][name] }}
-              span.range-width(v-if="Object.keys(overallWidth).length > 0", :style="{ width: overallWidth[requestName][idx] + '%' }")
+  .container.mx-auto.pt-10.relative
+    .flex.justify-between.items-start
+      //- EditStats(@selected-idxs="getSelectedStats")
+
+    h1.text-5xl.text-center.text-white(v-if="teamName.length > 0") {{ teamName }} {{ matchInfo.score }} {{ matchInfo.opponent }}
+  .stats-table-wrapper.custom-scrollbar.mx-auto.mt-12.p-3(ref="statsTable")
+    .stats-table.stats-legend.cursor-pointer.mb-2.text-left.text-xs(:style="{ width: computedScrollWidth + 'px'}")
+      .player.pl-1.pr-4.flex.flex-column.items-end.text-xs Игроки / players
+      .cols-comparison.pl-1.pr-4.flex.flex-column.items-end(v-for="(statName, requestName, idx) in statNames" :key="idx" @click="sortByStat(requestName, sortOrder)")
+        span.text-xs.text-white(v-for="(statRus, statEng, i) in statName", :key="i") {{ statRus }} / {{ statEng }}
+        //- span(v-if="column.sorted && column.sortOrder === 'asc'")▲
+        //- span(v-if="column.sorted && column.sortOrder === 'desc'")▼
+    .stats-table.text-left.text-xs(v-for="(value, name, idx) in statNameAndPlayersNameAndValue.minutesPlayed" :key="idx", :style="{ width: computedScrollWidth + 'px'}")
+      .player
+        .py-2.pr-2 {{ name }}
+      .cols-comparison.flex.items-center(v-if="isLoaded", v-for="(statName, requestName, i) in statNames" :key="i")
+        //- .stat-legend.mx-1.py-3 {{ russStatName }}
+        .stat-value.mx-1.py-2.px-3
+          span.range {{ statNameAndPlayersNameAndValue[requestName][name] }}
+            span.range-width(v-if="Object.keys(overallWidth).length > 0", :style="{ width: overallWidth[requestName][idx] + '%' }")
 </template>
+
+
 
 <script>
 export default {
@@ -31,8 +47,21 @@ export default {
 
       teamName: '',
       teamId: 0,
+      seasonData: {
+        name: '',
+        year: '',
+        id: 0
+      },
+      matchInfo: {
+        matchId: 0,
+        opponent: '',
+        score: ''
+      },
 
-      team: '38', // chelsea
+      visibleStats: [],
+      menuOpen: false,
+
+      sortOrder: 'asc',
       // team: '33', // tth
       // team: '35', // man utd
       // team: '39', // ньюкасл
@@ -42,51 +71,37 @@ export default {
       // team: '2829', // реал м
       // team: '1643', // лилль
 
-      matchId: 10385495,
+      matchId: 10385513,
       seasonTeam: 41886,
-      uniqueTournament: 17,
+      tournamentId: 17,
 
       playersDynamic: {},
       computedScrollWidth: 0,
       statNames: {
         minutesPlayed: { 'minutes': 'Минут', },
-
         touches: { touches: 'Касания (действия с мячом)', },
         totalPass: { 'total passes': 'Пасы', },
         accuratePass: { 'accurate passes': 'Успешные пасы', },
-
         keyPass: { 'key passes': 'Ключевые передачи', },
-
-        bigChanceCreated: { 'big chances created': 'Созданные голевые моменты' },
+        bigChanceCreated: { 'big chances created': 'Созданные голевые моменты', },
         goalAssist: { 'assists': 'Ассисты', },
-
         shotOffTarget: { 'shots off target': 'Удары мимо ворот', },
         onTargetScoringAttempt: { 'shots on target': 'Удары в створ ворот', },
         blockedScoringAttempt: { 'blocked shots': 'Заблокир. удары', },
-
-
-        bigChanceMissed: { 'big chances missed': 'Упущенные голевые моменты' },
+        bigChanceMissed: { 'big chances missed': 'Упущенные голевые моменты', },
         goals: { 'goals': 'Голы', },
-
-        totalContest: { 'total dribble': 'Попытки дриблинга' },
+        totalContest: { 'total dribble': 'Попытки дриблинга', },
         wonContest: { 'successful dribble': 'Успешный дриблинг', },
-
-
         totalLongBalls: { 'total long balls': 'Длинные передачи', },
         accurateLongBalls: { 'accurate long balls': 'Успешные длинные передачи', },
-
         totalCross: { 'total crosses': 'Навесы в штрафную', },
         accurateCross: { 'accurate crosses': 'Успешные навесы в штрафную', },
-
         aerialWon: { 'aerial dules won': 'Выиграно воздушных единоборств', },
         aerialLost: { 'aerial dules lost': 'Проиграно воздушных единоборств', },
-
-        duelLost: { 'ground dules won': 'Выиграно наземных единоборств', },
-        duelWon: { 'ground dules lost': 'Проиграно наземных единоборств', },
-
+        duelWon: { 'ground dules won': 'Выиграно наземных единоборств', },
+        duelLost: { 'ground dules lost': 'Проиграно наземных единоборств', },
         interceptionWon: { 'interceptions': 'Перехваты', },
         totalTackle: { tackles: 'Отборы', },
-
         totalClearance: { 'clearances': 'Выносы', },
         // possessionLostCtrl: { 'possession lost': 'Потерей мяча', },
 
@@ -126,7 +141,7 @@ export default {
       const statNamesArr = Object.keys(this.statNames)
       for (const statName of statNamesArr) {
         const statValues = Object.values(this.statNameAndPlayersNameAndValue[statName])
-        console.log(statValues)
+        // console.log(statValues)
         const minValue = 20
         const maxValue = Math.max(...statValues)
         const statValuesPersentage = statValues.map((value) => {
@@ -142,14 +157,58 @@ export default {
       }
       return rtn
     },
+    changeVisibilityStats() {
+      return this.visibleStats
+    }
   },
   mounted() {
-    console.log(this.$refs.statsTable.scrollWidth)
+    // console.log(this.$refs.statsTable.scrollWidth)
     this.computedScrollWidth = this.$refs.statsTable.scrollWidth
+    if (localStorage.getItem('dataForTable')) {
+      this.statNameAndPlayersNameAndValue = JSON.parse(localStorage.getItem('dataForTable')) ?? {}
+      this.isLoaded = true
+    }
   },
 
 
   methods: {
+    sortByStat(statName, sortOrder) {
+      console.log('this.statNameAndPlayersNameAndValue0')
+      console.log(this.statNameAndPlayersNameAndValue.accuratePass)
+      const values = this.statNameAndPlayersNameAndValue[statName]
+      const sortedValues = Object.entries(values).sort((a, b) => {
+        const valueA = a[1]
+        const valueB = b[1]
+        return sortOrder === 'asc' ? valueB - valueA : valueA - valueB
+      })
+      console.log(sortedValues)
+
+      const sortedMap = new Map(sortedValues)
+      const sortedObject = Object.fromEntries(sortedMap)
+      console.log(sortedObject)
+      // Sort other properties based on statName
+      // const statNameObj = this.statNameAndPlayersNameAndValue[statName]
+      for (const propName in this.statNameAndPlayersNameAndValue) {
+        if (propName !== statName && Object.prototype.hasOwnProperty.call(this.statNameAndPlayersNameAndValue, propName)) {
+          const propObj = this.statNameAndPlayersNameAndValue[propName]
+          const sortedPropObj = {}
+          Object.keys(sortedObject).forEach(playerName => {
+            if (playerName in propObj) {
+              sortedPropObj[playerName] = propObj[playerName]
+            }
+          })
+          this.statNameAndPlayersNameAndValue[propName] = sortedPropObj
+        }
+      }
+
+      this.statNameAndPlayersNameAndValue[statName] = sortedObject
+
+      console.log('this.statNameAndPlayersNameAndValue2')
+      console.log(this.statNameAndPlayersNameAndValue.accuratePass)
+      // localStorage.setItem('dataForTable', JSON.stringify(this.statNameAndPlayersNameAndValue))
+      this.sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'
+      this.$forceUpdate()
+    },
     async getPrevMatch() {
       try {
         const response = await this.$axios.get(
@@ -172,12 +231,26 @@ export default {
     },
     getSearchResult(data) {
       this.teamName = data.name
-      this.teamId = data.id
+      this.teamId = +data.id
+    },
+    getChosenSeason(data) {
+      console.log(data)
+      this.seasonData = {...data}
+    },
+    getChosenMatch(data) {
+      this.matchInfo = data.searchedTeamMatches
+      console.log(this.matchInfo)
+    },
+    getSelectedStats(data) {
+      this.visibleStats = []
+      console.log(data.idxs)
+      this.visibleStats.push(...data.idxs)
+      console.log(this.visibleStats)
     },
     async fetchSofaPlayersName() {
       try {
         const response = await this.$axios.get(
-          `/api/v1/team/${this.teamId}/unique-tournament/${this.uniqueTournament}/season/${this.seasonTeam}/top-players/overall`
+          `/api/v1/team/${this.teamId}/unique-tournament/${this.tournamentId}/season/${this.seasonTeam}/top-players/overall`
         )
         const playersArr = response.data.topPlayers.rating
         playersArr.forEach(player => {
@@ -188,7 +261,7 @@ export default {
 
         await this.takeSofaDataPlayers()
         this.fetchPlayerStats()
-        await this.takeFotmobDataPlayers()
+        // await this.takeFotmobDataPlayers()
         console.log(this.start11Stats)
       } catch (e) {
         console.error(e.response)
@@ -201,7 +274,7 @@ export default {
           const id = this.playersDynamic[name];
           try {
             const response = await this.$axios.get(
-              `https://api.sofascore.com/api/v1/event/${this.matchId}/player/${id}/statistics`
+              `/api/v1/event/${this.matchInfo.matchId}/player/${id}/statistics`
             )
             const stats = response.data.statistics
             const position = response.data.player.position
@@ -233,7 +306,8 @@ export default {
           }
 
           this.statNameAndPlayersNameAndValue[statName] = objStat
-          // console.log(this.statNameAndPlayersNameAndValue)
+          console.log(this.statNameAndPlayersNameAndValue)
+          localStorage.setItem('dataForTable', JSON.stringify(this.statNameAndPlayersNameAndValue))
         }
       // console.log(this.isLoaded)
       this.isLoaded = true
@@ -323,26 +397,10 @@ export default {
       )
       console.log(this.statNames)
     },
-    // разбиваем данные
-    // decomposedFotmobStat() {
-    //   const statNameAndNamesWithStats = {}
-    //   for (const statName in this.statNamesFotmob) {
-    //       // { 'Kepa': 30, 'Рюди': 74 }
-    //       for (const name in this.playersDynamic) {
-    //         if (Object.hasOwnProperty.call(this.playersDynamic, name)) {
-    //           const stats = this.playersDynamic[name];
-    //           const wentToField = Object.keys(stats).length
-    //           if (wentToField) {
-    //             statNameAndNamesWithStats[name] = stats[statName]
-    //             if (!stats[statName]) statNameAndNamesWithStats[name] = ''
-    //           }
-    //         }
-    //       }
+    toggleMenu() {
+    this.menuOpen = !this.menuOpen;
+  },
 
-    //       this.statNameAndPlayersNameAndValue[statName] = statNameAndNamesWithStats
-    //       // console.log(this.statNameAndPlayersNameAndValue)
-    //     }
-    // },
   },
 }
 </script>
@@ -378,8 +436,9 @@ $colors: $c1, $c2, $c3, $c4, $c5, $c6, $c7, $c8, $c9, $c10, $c11, $c12, $c13, $c
 }
 
 .container-fluid {
-  background-image: url('https://phonoteka.org/uploads/posts/2022-02/1645386095_54-phonoteka-org-p-stilnii-fon-dlya-vizitki-54.jpg');
-  // background-repeat: no-repeat;
+  background-image: url('https://cdn.techhq.com/wp-content/uploads/2019/03/shutterstock_403455289.jpg');
+  background-repeat: no-repeat;
+  background-size: cover;
   // background-size: 100%;
   // background-position: 47% 50%;
   font-family: 'Tenor Sans', sans-serif;
@@ -391,12 +450,46 @@ $colors: $c1, $c2, $c3, $c4, $c5, $c6, $c7, $c8, $c9, $c10, $c11, $c12, $c13, $c
     bottom: 0;
     right: 0;
     z-index: 0;
-    // background: rgba($color: #222, $alpha: 0.8);
+    background: rgba($color: #222, $alpha: 0.8);
     // backdrop-filter: blur(1px);
     position: fixed;
   }
 }
 @include bg-color;
+
+.hamburger {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 25px;
+  width: 30px;
+  &:focus {
+    outline: none;
+  }
+
+  .line1, .line2, .line3 {
+    background-color: #fff;
+    height: 3px;
+    width: 100%;
+    transition: all 0.3s ease;
+  }
+
+  .line1.change {
+    transform: translateY(14px) rotate(-45deg);
+  }
+
+  .line2.change {
+    opacity: 0;
+  }
+
+  .line3.change {
+    transform: translateY(-8px) rotate(45deg);
+  }
+}
 
 .stats-table-wrapper {
   overflow-x: scroll;
@@ -420,13 +513,15 @@ $colors: $c1, $c2, $c3, $c4, $c5, $c6, $c7, $c8, $c9, $c10, $c11, $c12, $c13, $c
 
   .player {
     flex: 0 0 140px;
-    background-color: rgba($color: #000, $alpha: 0.4);
+    background-color: rgba($color: rgb(29, 28, 28), $alpha: 0.7);
     position: sticky;
     left: -14px;
     padding-left: 8px;
     z-index: 50;
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(8px);
     border-radius: 8px;
+    font-weight: 600;
+    letter-spacing: 1px;
   }
   .cols-comparison {
     flex: 0 0 110px;
@@ -490,5 +585,13 @@ $colors: $c1, $c2, $c3, $c4, $c5, $c6, $c7, $c8, $c9, $c10, $c11, $c12, $c13, $c
   .touches {
     // max-width: 62px;
   }
+}
+
+.slide-fade-enter-active, .slide-fade-leave-active {
+  transition: all .3s ease;
+}
+.slide-fade-enter, .slide-fade-leave-to /* .slide-fade-leave-active in <2.1.8 */ {
+  transform: translateY(-100%);
+  opacity: 0;
 }
 </style>

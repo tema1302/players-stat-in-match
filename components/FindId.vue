@@ -1,9 +1,9 @@
 <template lang="pug">
-  .relative
-    input.bg-gray-700.text-white.rounded-lg.py-2.px-3(class="w-full focus:bg-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-transparent", type="text", placeholder="Название клуба или имя", v-model="inputedName")
-    .search-results.custom-scrollbar.my-5.bg-gray-700.rounded-lg.text-white(ref="searchResults", v-if="gotResult", class="")
-      ul#results-list
-        li(v-for="(result, idx) in results" :key="result.id" class="bg-gray-700 hover:bg-gray-600 transition" @click="selectItem(idx)") {{ result.name }}
+.relative
+  input.bg-gray-700.text-white.rounded-lg.py-2.px-3(class="w-full focus:bg-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-transparent", type="text", placeholder="Название клуба или имя", v-model="inputedName")
+  .search-results.custom-scrollbar.my-5.bg-gray-700.rounded-lg.text-white(ref="searchResults", v-if="gotResult", class="")
+    ul#results-list
+      li(v-for="(result, idx) in results" :key="result.id" class="bg-gray-700 hover:bg-gray-600 transition" @click="selectItem(idx)") {{ result.name }}
 </template>
 
 <script>
@@ -25,7 +25,7 @@ export default {
         const response = await this.$axios.get(
           `/api/v1/search/${this.inputedName}/0`
         )
-        const results = response.data.results.filter(result => result.type === 'team' && result.entity.sport.name === 'Football')
+        const results = response.data.results.filter(result => result.type === 'team' && result.entity.sport.name === 'Football' && result.entity.country.alpha2 === 'EN')
         .map(team => ({ name: team.entity.name, id: team.entity.id }))
         this.results = [...results] // [{"name":"Chelsea","id":38},{"name":"Manchester City","id":17}...]
         this.gotResult = true
@@ -37,21 +37,32 @@ export default {
       }
     },
   },
+  mounted() {
+    this.selectedId = localStorage.getItem('selectedId') ?? 0
+    this.selectedName = localStorage.getItem('selectedName') ?? ''
+    if (this.selectedId ?? this.selectedName) this.emitSelectedItem()
+  },
   methods: {
     searchModal(action) {
       const list = this.$refs.searchResults
-      action === 'open' ? list.classList.add('visible') : list.classList.add('hidden')
+      action === 'open' ? list.classList.add('visible') : list.classList.remove('visible')
       console.log(action)
     },
     selectItem(index) {
       this.selectedId = this.results[index].id
       this.selectedName = this.results[index].name
+      this.inputedName = this.selectedName; // Обновление значения инпута
+      localStorage.setItem('selectedId', this.selectedId)
+      localStorage.setItem('selectedName', this.selectedName)
       this.searchModal('')
+      this.emitSelectedItem()
+    },
+    emitSelectedItem() {
       this.$emit('item-selected', {
         id: this.selectedId,
         name: this.selectedName
       })
-    },
+    }
   },
 }
 </script>
@@ -63,6 +74,7 @@ export default {
   left: 0;
   right: 0;
   color: #ffffff;
+  line-height: 1.1;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
   z-index: 10;
   height: 300px;
@@ -99,11 +111,11 @@ export default {
   &::-webkit-scrollbar-thumb {
     background: rgba(100,116,139,.5);
     border-radius: 100vh;
-    border: 1px solid #f6f7ed2c;
+    border: 1px solid #f6f7ed0c;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: rgba(100,116,139,.36);
+    background: rgba(100, 116, 139, 0.583);
   }
 }
 </style>
